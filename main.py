@@ -1,9 +1,12 @@
 # =====================Entête=================================
-# Nom du project : 2048
+# Nom du project : Jeu 2048 5x5
 # Auteur : Lilibeth Zerda
-# Date de debut : 12.02.2026
+# Date de debut : 05.02.2026
 # Date final :
 # ======================================================
+
+#1er sprint final: 12.02.2026, correction: 26.02.2026
+#2eme sprint final : 05.03.2026
 
 # ================= IMPORT ============================
 import tkinter as tk
@@ -16,20 +19,20 @@ BACKGROUND_COLOR = "#FDEAF2"
 
 # ================Couleurs des tuiles (dictionaire)=========================
 COLORS = {
-    0: ("#CCCCCC", "#000000"), #case vide
-    2: ("#FFD6FF", "#000000"),
-    4: ("#F3CEFF", "#000000"),
-    8: ("#E7C6FF", "#000000"),
-    16: ("#D8BEFF", "#000000"),
-    32: ("#C8B6FF", "#000000"),
-    64: ("#B8C0FF", "#000000"),
-    128: ("#B79CED", "#000000"),
-    256: ("#A68EEE", "#000000"),
-    512: ("#9275E7", "#000000"),
-    1024: ("#8463E8", "#000000"),
-    2048: ("#6D48DB", "#000000"),
-    4096: ("#6853A8","#000000"),
-    8192:("#4D3691","#000000")
+    0: "#CCCCCC", #case vide
+    2: "#FFD6FF",
+    4: "#F3CEFF",
+    8: "#E7C6FF",
+    16: "#D8BEFF",
+    32: "#C8B6FF",
+    64: "#B8C0FF",
+    128: "#B79CED",
+    256: "#A68EEE",
+    512: "#9275E7",
+    1024: "#8463E8",
+    2048: "#6D48DB",
+    4096: "#6853A8",
+    8192:"#4D3691"
 }
 
 # ===============Valeurs pour la grille (tableaux memoire)====================
@@ -51,11 +54,12 @@ game_mid = [
 
 game = game_mid
 
-# ================= Liste des labels =================
+# = Liste qui va contenir les labels de chaque case de la grille=
 cells = [[None] * GRID_SIZE for _ in range(GRID_SIZE)]
 
-# ================= Fonction =================
+# ================= Fonctions =================
 def display_game():
+    """Met à jour l'affichage de la grille logique"""
     for i in range(GRID_SIZE):
         for j in range(GRID_SIZE):
             value = game[i][j]
@@ -63,17 +67,273 @@ def display_game():
             if value == 0:
                 cells[i][j].config(
                     text="",
-                    bg=COLORS[0][0],
-                    fg=COLORS[0][1]
+                    bg=COLORS[0],
+                    fg="black"
                 )
             else:
                 cells[i][j].config(
                     text=str(value),
-                    bg=COLORS[value][0],
-                    fg=COLORS[value][1]
+                    bg=COLORS[value],
+                    fg="black"
                 )
 
-# ================= PROGRAMME PRINCIPAL =================
+def pack5_ligne(ligne):
+    """
+    Reçoit une liste de 5 valeurs.
+    Retourne :
+    la ligne tassée vers la gauche, le nombre de mouvements effectués
+    """
+    #5 valeurs de la ligne
+    a, b, c, d, e = ligne
+    nmove = 0 #pour compte de mouvements
+
+    # ===== Déplacement vers la gauche =====
+
+    if d == 0 and e != 0:
+        d, e = e, 0
+        nmove += 1
+
+    if c == 0 and d != 0:
+        c, d, e = d, e, 0
+        nmove += 1
+
+    if b == 0 and c != 0:
+        b, c, d, e = c, d, e, 0
+        nmove += 1
+
+    if a == 0 and b != 0:
+        a, b, c, d, e = b, c, d, e, 0
+        nmove += 1
+
+    #si deux cases voisines sont égales, on les fusionne
+
+    if a == b and a != 0:
+        a *= 2
+        b, c, d, e = c, d, e, 0
+        nmove += 1
+
+    if b == c and b != 0:
+        b *= 2
+        c, d, e = d, e, 0
+        nmove += 1
+
+    if c == d and c != 0:
+        c *= 2
+        d, e = e, 0
+        nmove += 1
+
+    if d == e and d != 0:
+        d *= 2
+        e = 0
+        nmove += 1
+
+    return [a, b, c, d, e], nmove
+
+#tests
+print(pack5_ligne([0, 0, 0, 0, 2]))
+print(pack5_ligne([0, 0, 2, 2, 0]))
+print(pack5_ligne([2, 0, 2, 2, 2]))
+print(pack5_ligne([2, 2, 2, 2, 2]))
+print(pack5_ligne([2, 2, 4, 0, 4]))
+#######################################################################################################################
+#######################################################################################################################
+# Function pour recommencer une nouvelle partie
+def restart_game():
+    global game
+
+    # grille vide
+    game = [
+        [16,0,0,0,8],
+        [0,0,0,0,0],
+        [32,0,0,0,0],
+        [0,0,0,0,0],
+        [0,0,4,2,2]
+    ]
+    # réaffiche la grille
+    display_game()
+    print("Nouvelle partie")
+
+#######################################################################################################################
+#######################################################################################################################
+#Function pour déplacer la grille vers la gauche
+def move_left():
+    global game
+    tot_move = 0
+
+    ligne, nmove = pack5_ligne(game[0])
+    game[0][0], game[0][1], game[0][2], game[0][3], game[0][4] = ligne
+    tot_move += nmove
+
+    ligne, nmove = pack5_ligne(game[1])
+    game[1][0], game[1][1], game[1][2], game[1][3], game[1][4] = ligne
+    tot_move += nmove
+
+    ligne, nmove = pack5_ligne(game[2])
+    game[2][0], game[2][1], game[2][2], game[2][3], game[2][4] = ligne
+    tot_move += nmove
+
+    ligne, nmove = pack5_ligne(game[3])
+    game[3][0], game[3][1], game[3][2], game[3][3], game[3][4] = ligne
+    tot_move += nmove
+
+    ligne, nmove = pack5_ligne(game[4])
+    game[4][0], game[4][1], game[4][2], game[4][3], game[4][4] = ligne
+    tot_move += nmove
+
+    if tot_move > 0:
+        display_game()
+    return tot_move
+
+########################################################################################################################
+########################################################################################################################
+#function pour déplacer la grille vers la droite
+def move_right():
+    global game
+    tot_move = 0
+
+    # Ligne 0
+    ligne, nmove = pack5_ligne([game[0][4], game[0][3], game[0][2], game[0][1], game[0][0]])
+    ligne = list(reversed(ligne))
+    game[0][0], game[0][1], game[0][2], game[0][3], game[0][4] = ligne
+    tot_move += nmove
+
+    # Ligne 1
+    ligne, nmove = pack5_ligne([game[1][4], game[1][3], game[1][2], game[1][1], game[1][0]])
+    ligne = list(reversed(ligne))
+    game[1][0], game[1][1], game[1][2], game[1][3], game[1][4] = ligne
+    tot_move += nmove
+
+    # Ligne 2
+    ligne, nmove = pack5_ligne([game[2][4], game[2][3], game[2][2], game[2][1], game[2][0]])
+    ligne = list(reversed(ligne))
+    game[2][0], game[2][1], game[2][2], game[2][3], game[2][4] = ligne
+    tot_move += nmove
+
+    # Ligne 3
+    ligne, nmove = pack5_ligne([game[3][4], game[3][3], game[3][2], game[3][1], game[3][0]])
+    ligne = list(reversed(ligne))
+    game[3][0], game[3][1], game[3][2], game[3][3], game[3][4] = ligne
+    tot_move += nmove
+
+    # Ligne 4
+    ligne, nmove = pack5_ligne([game[4][4], game[4][3], game[4][2], game[4][1], game[4][0]])
+    ligne = list(reversed(ligne))
+    game[4][0], game[4][1], game[4][2], game[4][3], game[4][4] = ligne
+    tot_move += nmove
+
+    if tot_move > 0:
+        display_game()
+    return tot_move
+########################################################################################################################
+
+########################################################################################################################
+#function pour déplacer la grille vers le haut
+def move_up():
+    global game
+    tot_move = 0
+
+    # Colonne 0
+    ligne, nmove = pack5_ligne([game[0][0], game[1][0], game[2][0], game[3][0], game[4][0]])
+    game[0][0], game[1][0], game[2][0], game[3][0], game[4][0] = ligne
+    tot_move += nmove
+
+    # Colonne 1
+    ligne, nmove = pack5_ligne([game[0][1], game[1][1], game[2][1], game[3][1], game[4][1]])
+    game[0][1], game[1][1], game[2][1], game[3][1], game[4][1] = ligne
+    tot_move += nmove
+
+    # Colonne 2
+    ligne, nmove = pack5_ligne([game[0][2], game[1][2], game[2][2], game[3][2], game[4][2]])
+    game[0][2], game[1][2], game[2][2], game[3][2], game[4][2] = ligne
+    tot_move += nmove
+
+    # Colonne 3
+    ligne, nmove = pack5_ligne([game[0][3], game[1][3], game[2][3], game[3][3], game[4][3]])
+    game[0][3], game[1][3], game[2][3], game[3][3], game[4][3] = ligne
+    tot_move += nmove
+
+    # Colonne 4
+    ligne, nmove = pack5_ligne([game[0][4], game[1][4], game[2][4], game[3][4], game[4][4]])
+    game[0][4], game[1][4], game[2][4], game[3][4], game[4][4] = ligne
+    tot_move += nmove
+
+    if tot_move > 0:
+        display_game()
+    return tot_move
+########################################################################################################################
+
+########################################################################################################################
+#function pour déplacer la grille vers le bas
+def move_down():
+    global game
+    tot_move = 0
+
+    ligne, nmove = pack5_ligne([game[4][0], game[3][0], game[2][0], game[1][0], game[0][0]])
+    ligne = list(reversed(ligne))
+    game[0][0], game[1][0], game[2][0], game[3][0], game[4][0] = ligne
+    tot_move += nmove
+
+    ligne, nmove = pack5_ligne([game[4][1], game[3][1], game[2][1], game[1][1], game[0][1]])
+    ligne = list(reversed(ligne))
+    game[0][1], game[1][1], game[2][1], game[3][1], game[4][1] = ligne
+    tot_move += nmove
+
+    ligne, nmove = pack5_ligne([game[4][2], game[3][2], game[2][2], game[1][2], game[0][2]])
+    ligne = list(reversed(ligne))
+    game[0][2], game[1][2], game[2][2], game[3][2], game[4][2] = ligne
+    tot_move += nmove
+
+    ligne, nmove = pack5_ligne([game[4][3], game[3][3], game[2][3], game[1][3], game[0][3]])
+    ligne = list(reversed(ligne))
+    game[0][3], game[1][3], game[2][3], game[3][3], game[4][3] = ligne
+    tot_move += nmove
+
+    ligne, nmove = pack5_ligne([game[4][4], game[3][4], game[2][4], game[1][4], game[0][4]])
+    ligne = list(reversed(ligne))
+    game[0][4], game[1][4], game[2][4], game[3][4], game[4][4] = ligne
+    tot_move += nmove
+
+    if tot_move > 0:
+        display_game()
+    return tot_move
+
+########################################################################################################################
+
+########################################################################################################################
+#function pour tasser quand une touche est pressée (a,d,w,s/A,D,W,S).
+# La touche q/Q pour quitter le jeu.
+def key_pressed(event):
+    touche = event.keysym #nom de la touche pressée
+
+    if (touche=="Left" or touche=="a" or touche=="A"): #Déplacement vers la gauche
+        print("move LEFT")
+        if move_left() > 0:
+            display_game()
+
+    if (touche=="Right" or touche=="d" or touche=="D"): #Déplacement vers la droite
+        print("move RIGHT")
+        if move_right() > 0:
+            display_game()
+
+    if (touche=="Up" or touche=="w" or touche=="W"): #Déplacement vers la haut
+        print("move UP")
+        if move_up() > 0:
+            display_game()
+
+    if (touche=="Down" or touche=="s" or touche=="S"): #Déplacement ver le bas
+        print("move DOWN")
+        if move_down() > 0:
+            display_game()
+
+    if (touche=="q" or touche=="Q"): #toucher "q" pour quitter le jeu 2048
+        print("touche quit")
+        exit()
+
+    if (touche=="r" or touche=="R"): #touche pour recommencer le jeu
+        print("recomence")
+        restart_game()
+
+#================= INTERFACE GRAPHIQUE =================
 
 # Création de la fenêtre principale
 window = tk.Tk()
@@ -81,12 +341,12 @@ window.title("2048 - Lilibeth")
 window.geometry("630x680")  # Taille de la fenêtre agrandie
 
 
-########################################################################################################################
+########################################################################################
 # === Cadre supérieur pour le score et les boutons ===
 top_frame = tk.Frame(window)
 top_frame.pack(pady=(10, 10), ipadx=39)  # Espacement avec la grille
 
-########################################################################################################################
+########################################################################################
 # frame meilleur score et nouvelle partie
 frame1 = tk.Frame(top_frame)
 frame1.pack(pady=10, fill="x")
@@ -102,9 +362,9 @@ best_score_value.pack(side="left")
 new_game_button = tk.Button(frame1, text="Nouvelle Partie", font=("Arial", 10, "bold"), bg="#FFD1EF", fg="#000000",
                             height=1, width=12, relief="solid", bd=2)
 new_game_button.pack(side="right",padx=(100,0))
-########################################################################################################################
+#######################################################################################
 
-########################################################################################################################
+#######################################################################################
 # frame score et quitter
 frame2 = tk.Frame(top_frame)
 frame2.pack(fill="x")
@@ -126,7 +386,7 @@ quit_button.pack(side="right",padx=(100,0))
 frame = tk.Frame(window, bg=BACKGROUND_COLOR, relief="solid", bd=2)
 frame.pack(padx=10, pady=10)  # Ajout d'un peu d'espace autour du cadre de la grille
 
-# Création des lables
+# Création des tuiles graphiques
 for i in range(GRID_SIZE):
     for j in range(GRID_SIZE):
         label = tk.Label(
@@ -135,8 +395,8 @@ for i in range(GRID_SIZE):
             font=FONT,
             width=6,
             height=3,
-            bg=COLORS[0][0],
-            fg=COLORS[0][1],
+            bg=COLORS[0],
+            fg="black",
             relief="solid",
             bd=0.4,
             highlightbackground="black",
@@ -145,6 +405,6 @@ for i in range(GRID_SIZE):
         label.grid(row=i, column=j, padx=10, pady=10)
         cells[i][j] = label
 
-
+window.bind('<Key>', key_pressed) #appelle key_pressed quand une touche est pressée
 display_game()
 window.mainloop()
