@@ -6,16 +6,29 @@
 # ======================================================
 
 #1er sprint final: 12.02.2026, correction: 26.02.2026
-#2eme sprint final : 05.03.2026
+#2eme sprint final : 05.03.2026, correction: 13.03.2026
+#3éme sprint final : 12.03.2026, correction:
 
 # ================= IMPORT ============================
 import tkinter as tk
-
+import random
 # =================Paramètres de la grille=================================
 GRID_SIZE = 5  # Grille 5x5
 CELL_SIZE = 120  # Taille d'une cellule agrandie
 FONT = ("Arial Rounded MT Bold", 18)  # Police agrandie
 BACKGROUND_COLOR = "#FDEAF2"
+########################################################################################################################
+#variables globales pour game over
+game_over = False
+game_over_label = None
+retry_button = None
+
+#variables globales pour gagne
+win_label = None
+continue_button = None
+win_displayed = False
+win_state = False
+########################################################################################################################
 
 # ================Couleurs des tuiles (dictionaire)=========================
 COLORS = {
@@ -45,11 +58,11 @@ game = [
 ]
 
 game_mid = [
-    [2,4,8,16,32],
-    [64,128,256,512,1024],
-    [2048,4096,8192,4,0],
-    [64,32,16,0,4],
-    [128,128,256,512,0]
+    [0,0,0,0,0],
+    [0,0,0,0,0],
+    [0,0,0,0,0],
+    [0,0,0,0,0],
+    [0,0,0,0,0]
 ]
 
 game = game_mid
@@ -139,16 +152,36 @@ print(pack5_ligne([2, 2, 4, 0, 4]))
 #######################################################################################################################
 # Function pour recommencer une nouvelle partie
 def restart_game():
-    global game
+    global game, game_over, game_over_label, retry_button,win_displayed, win_state
+
+    hide_win()
+    win_displayed = False
+    win_state = False
+
+    game_over = False
+
+    #pour supprimer le message Game over
+    if game_over_label is not None:
+        game_over_label.destroy()
+        game_over_label = None
+
+    if retry_button is not None:
+        retry_button.destroy()
+        retry_button = None
 
     # grille vide
     game = [
-        [16,0,0,0,8],
         [0,0,0,0,0],
-        [32,0,0,0,0],
         [0,0,0,0,0],
-        [0,0,4,2,2]
+        [0,0,0,0,0],
+        [0,0,0,0,0],
+        [0,0,0,0,0]
     ]
+
+    # ajouter les 2 premières tuiles aletoire
+    add_random_tile()
+    add_random_tile()
+
     # réaffiche la grille
     display_game()
     print("Nouvelle partie")
@@ -181,7 +214,15 @@ def move_left():
     tot_move += nmove
 
     if tot_move > 0:
+        add_random_tile()
         display_game()
+
+        if check_win() and not win_displayed:
+            show_win()
+
+        if check_lose():
+            print("PERDU !")
+            show_game_over()
     return tot_move
 
 ########################################################################################################################
@@ -222,7 +263,16 @@ def move_right():
     tot_move += nmove
 
     if tot_move > 0:
+        add_random_tile()
         display_game()
+
+
+        if check_win() and not win_displayed:
+            show_win()
+
+        if check_lose():
+            print("PERDU !")
+            show_game_over()
     return tot_move
 ########################################################################################################################
 
@@ -258,7 +308,15 @@ def move_up():
     tot_move += nmove
 
     if tot_move > 0:
+        add_random_tile()
         display_game()
+
+        if check_win() and not win_displayed:
+            show_win()
+
+        if check_lose():
+            print("PERDU !")
+            show_game_over()
     return tot_move
 ########################################################################################################################
 
@@ -294,15 +352,30 @@ def move_down():
     tot_move += nmove
 
     if tot_move > 0:
+        add_random_tile()
         display_game()
-    return tot_move
 
+        if check_win() and not win_displayed:
+            show_win()
+
+        if check_lose():
+            print("PERDU !")
+            show_game_over()
+    return tot_move
 ########################################################################################################################
 
 ########################################################################################################################
 #function pour tasser quand une touche est pressée (a,d,w,s/A,D,W,S).
 # La touche q/Q pour quitter le jeu.
 def key_pressed(event):
+    global game_over, win_state
+
+    # bloque le jeu si gagné ou perdu
+    if game_over: #perdu
+        return
+    if game_over or win_state: #gagné
+        return
+
     touche = event.keysym #nom de la touche pressée
 
     if (touche=="Left" or touche=="a" or touche=="A"): #Déplacement vers la gauche
@@ -333,6 +406,149 @@ def key_pressed(event):
         print("recomence")
         restart_game()
 
+########################################################################################################################
+
+########################################################################################################################
+#function pour ajouter 2 ou 4 dans une casse vide
+def add_random_tile():
+    #list de casse vides disponibles
+    empty_cells = []
+
+    for i in range(GRID_SIZE):
+        for j in range(GRID_SIZE):
+            if game[i][j] == 0: # garde seulment les cases vides
+                empty_cells.append((i, j))
+
+    # s'il n'y a plus de case vide on fait rien
+    if len(empty_cells) == 0:
+        return
+
+    # choisir une case vide au hasard
+    i, j = random.choice(empty_cells)
+
+    # On va ajouter le 80% de chance d'avoir 2, 20% d'avoir 4
+    if random.random() < 0.8:
+        game[i][j] = 2
+    else:
+        game[i][j] = 4
+########################################################################################################################
+########################################################################################################################
+def check_win(): #function pour verifier si le joueur a gagné
+    for i in range(GRID_SIZE):
+        for j in range(GRID_SIZE):
+            if game[i][j] == 2048:
+                return True
+    return False
+########################################################################################################################
+########################################################################################################################
+def check_lose(): #Fonction qui vérifie si le joueur a perdu (plus aucun mouvement possible)
+    for i in range(GRID_SIZE):
+        for j in range(GRID_SIZE):
+            if game[i][j] == 0:
+                return False
+
+    for i in range(GRID_SIZE): #verifier horizontal
+        for j in range(GRID_SIZE -1):
+            if game[i][j] == game[i][j+1]:
+                return False
+
+    for j in range(GRID_SIZE): #verifier vertical
+        for i in range(GRID_SIZE -1):
+            if game[i][j] == game[i+1][j]:
+                return False
+    return True
+########################################################################################################################
+########################################################################################################################
+def show_game_over(): # Affiche l’écran "Game Over" avec un bouton pour recommencer
+    global game_over, game_over_label, retry_button
+
+    game_over = True
+
+    game_over_label = tk.Label(
+        frame,
+        text="Game Over !",
+        font=("Arial", 40, "bold"),
+        bg="#FFFFFF",
+        fg="#555555"
+    )
+    game_over_label.place(relx=0.5, rely=0.4, anchor="center")
+
+    retry_button = tk.Button(
+        frame,
+        text="Réessayer",
+        command=restart_game,
+        font=("Arial", 12, "bold"),
+        bg="#8C7B6B",
+        fg="white"
+    )
+    retry_button.place(relx=0.5, rely=0.55, anchor="center")
+
+    if game_over:
+        return
+    game_over = True
+########################################################################################################################
+########################################################################################################################
+def show_win(): #function
+    global win_label, continue_button, retry_button, win_displayed, win_state
+
+    if win_displayed:
+        return
+
+    win_displayed = True
+    win_state = True  # pour bloquée le jeu
+
+    win_label = tk.Label(
+        frame,
+        text="Gagné ! 🎉",
+        font=("Arial", 40, "bold"),
+        bg="#FFFFFF",
+        fg="#4CAF50"
+    )
+    win_label.place(relx=0.5, rely=0.35, anchor="center")
+
+    continue_button = tk.Button(
+        frame,
+        text="Continuer",
+        command=continue_game,
+        font=("Arial", 12, "bold"),
+        bg="#4CAF50",
+        fg="white"
+    )
+    continue_button.place(relx=0.4, rely=0.55, anchor="center")
+
+    retry_button = tk.Button(
+        frame,
+        text="Recommencer",
+        command=restart_game,
+        font=("Arial", 12, "bold"),
+        bg="#8C7B6B",
+        fg="white"
+    )
+    retry_button.place(relx=0.6, rely=0.55, anchor="center")
+########################################################################################################################
+########################################################################################################################
+def hide_win(): #function pour enlever le message "gagné"
+
+    global win_label, continue_button, retry_button
+
+    if win_label is not None:
+        win_label.destroy()
+        win_label = None
+
+    if continue_button is not None:
+        continue_button.destroy()
+        continue_button = None
+
+    if retry_button is not None:
+        retry_button.destroy()
+        retry_button = None
+########################################################################################################################
+########################################################################################################################
+def continue_game(): #function pour continuer le jeu
+    global win_state
+
+    win_state = False
+    hide_win()
 #================= INTERFACE GRAPHIQUE =================
 
 # Création de la fenêtre principale
@@ -360,7 +576,7 @@ best_score_value.pack(side="left")
 
 # Bouton "Nouvelle Partie"
 new_game_button = tk.Button(frame1, text="Nouvelle Partie", font=("Arial", 10, "bold"), bg="#FFD1EF", fg="#000000",
-                            height=1, width=12, relief="solid", bd=2)
+                            height=1, width=12, relief="solid", bd=2,command=restart_game)
 new_game_button.pack(side="right",padx=(100,0))
 #######################################################################################
 
@@ -406,5 +622,10 @@ for i in range(GRID_SIZE):
         cells[i][j] = label
 
 window.bind('<Key>', key_pressed) #appelle key_pressed quand une touche est pressée
+
+# apparition des 2 premières tuiles aletoire au début du jeu
+add_random_tile()
+add_random_tile()
+
 display_game()
 window.mainloop()
